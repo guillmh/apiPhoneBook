@@ -1,0 +1,28 @@
+{
+  "name": "apiphonebook",
+  "version": "1.0.0",
+  "description": "A REST API to manage resources of a phonebook app. This exercise is part of nodejs with express from fullstackopen.",
+  "homepage": "https://github.com/guillmh/apiPhoneBook#readme",
+  "bugs": {
+    "url": "https://github.com/guillmh/apiPhoneBook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guillmh/apiPhoneBook.git"
+  },
+  "license": "ISC",
+  "author": "Guillber M",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
