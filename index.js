@@ -24,10 +24,21 @@ const persons = [
   },
 ];
 
+//Obtiene informacion de la api(hora, cantidad de recursos)
+app.get("/info", (request, response) => {
+  const fech = new Date();
+  const personsTotal = `Phonebook has info for ${
+    persons.length
+  } people <br/> ${fech.toString()}`;
+  response.send(personsTotal).end();
+});
+
+//Obtiene todo los revcursos de persons
 app.get("/api/persons", (request, response) => {
   response.json(persons);
 });
 
+//Declara una variabel con el puerto
 const PORT = 3001;
 
 app.listen(PORT, () => {
