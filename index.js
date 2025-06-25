@@ -1,7 +1,17 @@
 const express = require("express");
+const morgan = require("morgan");
+const cors = require("cors");
 const app = express();
 
 app.use(express.json());
+app.use(cors());
+
+//Creamos un nuevo token personalizado de morgan, el cual nos devulve le contenido del cuerpo en formato JSON
+morgan.token("body", (req) => JSON.stringify(req.body));
+//Indicamos que queremos usar a morgan como middleware, indicamos la infromacion que se muestre, al ultimo usamos nuestro token personalizado 'body'
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :body")
+);
 
 let persons = [
   {
@@ -61,7 +71,7 @@ app.delete("/api/persons/:id", (request, response) => {
 
 //Funcion para generar un id
 const generateId = () => {
-  const maxId = notes.length > 0 ? Math.max(...notes.map((n) => n.id)) : 0;
+  const maxId = persons.length > 0 ? Math.max(...persons.map((n) => n.id)) : 0;
   return maxId + 1;
 };
 
@@ -92,6 +102,35 @@ app.post("/api/persons", (request, response) => {
   //Une el array persons con el nuveo recurso person
   persons = persons.concat(person);
   response.status(201).json(person);
+});
+
+//Actualiza un solo recurso pormedio de su id
+app.put("/api/persons/:id", (request, response) => {
+  const id = Number(request.params.id);
+  const body = request.body;
+
+  //Verifica que el body tenga los campos necesarios
+  if (!body.name || !body.number) {
+    return response.status(404).json({ error: "Name or number missing" });
+  }
+
+  //Busca el indice del contacto a actualizar
+  const personIndex = persons.findIndex((person) => person.id === id);
+  if (personIndex === -1) {
+    return response.status(404).json({ error: "Person not Found" });
+  }
+
+  //crea el obnjeto actualizado
+  const updatedPerson = {
+    ...persons[personIndex],
+    name: body.name,
+    number: body.number,
+  };
+
+  //Actualiza el array
+  persons[personIndex] = updatedPerson;
+
+  response.json(updatedPerson);
 });
 
 //Declara una variabel con el puerto
