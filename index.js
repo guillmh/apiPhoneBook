@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
 
+app.use(express.static("dist"));
 app.use(express.json());
 app.use(cors());
 
@@ -134,7 +135,7 @@ app.put("/api/persons/:id", (request, response) => {
 });
 
 //Declara una variabel con el puerto
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`Server runing on port ${PORT}`);
