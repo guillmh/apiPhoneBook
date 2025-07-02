@@ -1,6 +1,10 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+require("dotenv").config();
+
+const Person = require("./models/numbers");
+const errorHandler = require("./middleware/errorHandler");
 const app = express();
 
 app.use(express.static("dist"));
@@ -14,125 +18,100 @@ app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :body")
 );
 
-let persons = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
 //Obtiene informacion de la api(hora, cantidad de recursos)
-app.get("/info", (request, response) => {
-  const fech = new Date();
-  const personsTotal = `Phonebook has info for ${
-    persons.length
-  } people <br/> ${fech.toString()}`;
-  response.send(personsTotal).end();
+app.get("/info", (request, response, next) => {
+  Person.countDocuments({})
+    .then((count) => {
+      const fech = new Date();
+      const personsTotal = `Phonebook has info for ${count} people <br/> ${fech.toString()}`;
+      response.send(personsTotal);
+    })
+    .catch((error) => next(error));
 });
 
 //Obtiene todo los recursos de persons
-app.get("/api/persons", (request, response) => {
-  response.json(persons);
+app.get("/api/persons", (request, response, next) => {
+  Person.find({})
+    .then((person) => {
+      response.json(person);
+    })
+    .catch((error) => next(error));
 });
 
 //Obtiene un solo recurso por medio de un identificador
-app.get("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const person = persons.find((person) => person.id === id);
-  if (person) {
-    response.json(person);
-  } else {
-    response.status(404).end();
-  }
+app.get("/api/persons/:id", (request, response, next) => {
+  Person.findById(request.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
 //Elimina un solo recurso por medio de un identificador
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((person) => person.id !== id);
-
-  response.status(204).end();
+app.delete("/api/persons/:id", (request, response, next) => {
+  Person.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
-//Funcion para generar un id
-const generateId = () => {
-  const maxId = persons.length > 0 ? Math.max(...persons.map((n) => n.id)) : 0;
-  return maxId + 1;
-};
-
 //Agrega un recurso a persons
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body;
   //Verifica si el campo name o number estan vacios, si lo estan devulve un mensaje de error
-  if (!body.name || !body.number) {
-    return response.status(404).json({ error: "You need to add any fields" });
+  if (body === undefined) {
+    return response.status(400).json({ error: "content missing" });
   }
-  //Verifica si almenos un elemento cumple con la condicion en este casi si es igual el nombre y devuelve true
-  const nameExists = persons.some(
-    (p) => p.name.toLocaleLowerCase() === body.name.toLocaleLowerCase()
-  );
-  //si es true responde con un mensaje de error
-  if (nameExists) {
-    return response
-      .status(404)
-      .json({ error: "The name is already registered" });
-  }
-  //El cuerpo con los campos person
-  const person = {
+
+  const number = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
-  console.log(person);
-  //Une el array persons con el nuveo recurso person
-  persons = persons.concat(person);
-  response.status(201).json(person);
+  });
+
+  number
+    .save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    })
+    .catch((error) => next(error));
 });
 
 //Actualiza un solo recurso pormedio de su id
-app.put("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const body = request.body;
+app.put("/api/persons/:id", (request, response, next) => {
+  const { name, number } = request.body;
 
   //Verifica que el body tenga los campos necesarios
-  if (!body.name || !body.number) {
+  if (!name || !number) {
     return response.status(404).json({ error: "Name or number missing" });
   }
 
   //Busca el indice del contacto a actualizar
-  const personIndex = persons.findIndex((person) => person.id === id);
-  if (personIndex === -1) {
-    return response.status(404).json({ error: "Person not Found" });
-  }
-
-  //crea el obnjeto actualizado
-  const updatedPerson = {
-    ...persons[personIndex],
-    name: body.name,
-    number: body.number,
-  };
-
-  //Actualiza el array
-  persons[personIndex] = updatedPerson;
-
-  response.json(updatedPerson);
+  Person.findByIdAndUpdate(
+    request.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: "query" }
+  )
+    .then((updatePerson) => {
+      if (updatePerson) {
+        response.json(updatePerson);
+      } else {
+        response.status(400).json({ error: "Person not found" });
+      }
+    })
+    .catch((error) => next(error));
 });
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+app.use(errorHandler);
 
 //Declara una variabel con el puerto
 const PORT = process.env.PORT || 3001;
