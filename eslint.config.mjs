@@ -1,7 +1,7 @@
-import stylistic from "@stylistic/eslint-plugin";
-import globals from "globals";
-import { defineConfig } from "eslint/config";
-import js from "@eslint/js";
+import stylistic from "@stylistic/eslint-plugin"
+import globals from "globals"
+import { defineConfig } from "eslint/config"
+import js from "@eslint/js"
 
 export default defineConfig([
   {
@@ -9,7 +9,7 @@ export default defineConfig([
     ignores: ["dist/**"],
     plugins: { "@stylistic": stylistic },
     ...js.configs.recommended,
-    languageOptions: { globals: globals.node, sourceType: "commonjs" },
+    languageOptions: { globals: globals.node, sourceType: "module" },
     rules: {
       "@stylistic/indent": ["error", 2],
       "@stylistic/linebreak-style": ["error", "unix"],
@@ -21,4 +21,4 @@ export default defineConfig([
       "no-console": "off",
     },
   },
-]);
+])
